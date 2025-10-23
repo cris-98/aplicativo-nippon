@@ -4,18 +4,25 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.TypeConverters
+import grupo.aplicativo.data.local.dao.MovimientoDao
 import grupo.aplicativo.data.local.dao.ProductoDao
+import grupo.aplicativo.data.local.entity.Movimiento
 import grupo.aplicativo.data.local.entity.Producto
 
 
 @Database(
-    entities = [Producto::class],
-    version = 1,
+    entities = [Producto::class,
+               Movimiento::class
+               ],
+    version = 2,
     exportSchema = false
 )
+@TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun productoDao(): ProductoDao
+    abstract fun movimientoDao(): MovimientoDao
 
     companion object {
         @Volatile

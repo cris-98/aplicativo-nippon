@@ -39,9 +39,13 @@ fun ProductosScreen(
 
     // Filtrar productos según el filtro seleccionado
     val productosFiltrados = remember(productos, filtroSeleccionado, busqueda) {
+        //Quiero modifiar el filtro para que muestre:
         var lista = when (filtroSeleccionado) {
+            //Todos los movimientos de entrada y salida
             "Todos" -> productos
+            //Entrada de productos
             "Stock Bajo" -> productos.filter { it.esBajoStock() }
+            //Salida de productos
             "Activos" -> productos.filter { it.estaActivo() }
             else -> productos
         }
@@ -88,6 +92,7 @@ fun ProductosScreen(
                 }
             )
         },
+        // Eliminar ese boton para que crees otro que te especificare mas adelante
         floatingActionButton = {
             FloatingActionButton(
                 onClick = onAgregarProducto,
@@ -236,9 +241,11 @@ fun EstadisticasCard(
                 .padding(16.dp),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
+            //Convertir Boton de navegacion que lleve a ..
             EstadisticaItem(
                 icono = Icons.Default.Inventory,
                 valor = totalProductos.toString(),
+                //LLeve a EntradasActivity
                 etiqueta = "Total Productos",
                 color = Color(0xFF1976D2)
             )
@@ -248,10 +255,11 @@ fun EstadisticasCard(
                     .height(50.dp)
                     .width(1.dp)
             )
-
+            //Convertir Boton de navegacion que lleve a ..
             EstadisticaItem(
                 icono = Icons.Default.Warning,
                 valor = stockBajo.toString(),
+                //LLeve a SalidasActivity
                 etiqueta = "Stock Bajo",
                 color = Color(0xFFFF5722)
             )
