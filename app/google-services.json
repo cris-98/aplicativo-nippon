@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "649037825893",
+    "project_id": "bdnipponauto",
+    "storage_bucket": "bdnipponauto.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:649037825893:android:e979f83e397212db12c38c",
+        "android_client_info": {
+          "package_name": "com.grupo.aplicativo"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC3avOtEQk0NkHCUW9fuHAjoJ5as1HPCs8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
