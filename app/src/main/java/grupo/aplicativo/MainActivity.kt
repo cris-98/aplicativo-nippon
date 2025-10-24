@@ -20,7 +20,8 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            AplicativonipponTheme {
+            // Forzar tema oscuro para pruebas: cambia a false si quieres modo claro
+            AplicativonipponTheme(darkTheme = false) {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     // Crear ViewModel manual para demo con remember (evita dependencia a lifecycle-viewmodel-compose)
                     val vm = remember { grupo.aplicativo.reports.ReportViewModel() }
@@ -36,7 +37,7 @@ class MainActivity : ComponentActivity() {
 @Preview(showBackground = true)
 @Composable
 fun GreetingPreview() {
-    AplicativonipponTheme {
+    AplicativonipponTheme(darkTheme = true) {
         // No usar viewModel() en previews: crear instancia directa para UI de preview
         ReportListScreen(viewModel = grupo.aplicativo.reports.ReportViewModel())
     }
