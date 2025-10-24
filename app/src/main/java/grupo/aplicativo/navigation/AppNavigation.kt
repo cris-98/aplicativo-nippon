@@ -1,6 +1,8 @@
 package grupo.aplicativo.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -8,6 +10,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import grupo.aplicativo.reports.ReportListScreen
 import grupo.aplicativo.reports.ReportViewModel
+import grupo.aplicativo.reports.ReportRepository
+import grupo.aplicativo.data.local.database.AppDatabase
 import grupo.aplicativo.ui.screens.MenuPrincipalScreen
 import grupo.aplicativo.ui.screens.movimientos.MovimientosScreen
 import grupo.aplicativo.ui.screens.movimientos.entradas.EntradasScreen
@@ -33,7 +37,6 @@ sealed class Screen(val route: String) {
         fun createRoute(movimientoId: Int) = "detalle_movimiento/$movimientoId"
     }
 }
-
 
 
 @Composable
@@ -78,10 +81,8 @@ fun AppNavigation(navController: NavHostController) {
             arguments = listOf(
                 navArgument("productoId") { type = NavType.IntType }
             )
-        ) { backStackEntry ->
-            val productoId = backStackEntry.arguments?.getInt("productoId") ?: 0
+        ) { _ ->
             // TODO: Implementar DetalleProductoScreen
-            // Por ahora, volvemos atrás
             navController.popBackStack()
         }
 
@@ -130,17 +131,20 @@ fun AppNavigation(navController: NavHostController) {
             arguments = listOf(
                 navArgument("movimientoId") { type = NavType.IntType }
             )
-        ) { backStackEntry ->
-            val movimientoId = backStackEntry.arguments?.getInt("movimientoId") ?: 0
+        ) { _ ->
             // TODO: Implementar DetalleMovimientoScreen
-            // Por ahora, volvemos atrás
             navController.popBackStack()
         }
 
         // Reporte
         composable(Screen.Reportes.route) {
-            val viewModel = ReportViewModel()
-            ReportListScreen(viewModel)
+            val context = LocalContext.current
+            val movimientoDao = remember { AppDatabase.getDatabase(context).movimientoDao() }
+            // Inyectamos el DAO globalmente al repositorio de reportes
+            ReportRepository.setDao(movimientoDao)
+            val reportRepository = remember { ReportRepository() }
+            val viewModel = remember { ReportViewModel(reportRepository) }
+            ReportListScreen(viewModel, onNavigateBack = { navController.popBackStack() })
         }
     }
 }
