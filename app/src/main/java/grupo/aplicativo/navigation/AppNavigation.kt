@@ -1,12 +1,18 @@
 package grupo.aplicativo.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
-import grupo.aplicativo.ui.screens.menu.MenuPrincipalScreen
+import grupo.aplicativo.reports.ReportListScreen
+import grupo.aplicativo.reports.ReportViewModel
+import grupo.aplicativo.reports.ReportRepository
+import grupo.aplicativo.data.local.database.AppDatabase
+import grupo.aplicativo.ui.screens.MenuPrincipalScreen
 import grupo.aplicativo.ui.screens.movimientos.MovimientosScreen
 import grupo.aplicativo.ui.screens.movimientos.entradas.EntradasScreen
 import grupo.aplicativo.ui.screens.movimientos.salidas.SalidasScreen
@@ -15,12 +21,14 @@ import grupo.aplicativo.ui.screens.productos.ProductosScreen
 
 
 sealed class Screen(val route: String) {
-    object Menu : Screen("menu")  //  RUTA MenuPrincipal
+    object Menu : Screen("menu")
     object Productos : Screen("productos")
     object AgregarProducto : Screen("agregar_producto")
     object DetalleProducto : Screen("detalle_producto/{productoId}") {
         fun createRoute(productoId: Int) = "detalle_producto/$productoId"
     }
+    object Reportes : Screen("reportes")
+
     // RUTAS PARA MOVIMIENTOS
     object Movimientos : Screen("movimientos")
     object RegistrarEntrada : Screen("registrar_entrada")
@@ -30,22 +38,20 @@ sealed class Screen(val route: String) {
     }
 }
 
+
 @Composable
 fun AppNavigation(navController: NavHostController) {
     NavHost(
         navController = navController,
         startDestination = Screen.Menu.route
     ) {
-        // ==================== MENÚ PRINCIPAL ====================
+        // Menu principal
         composable(Screen.Menu.route) {
-            MenuPrincipalScreen(
-                onProductosClick = {
-                    navController.navigate(Screen.Productos.route)
-                },
-                onMovimientosClick = {
-                    navController.navigate(Screen.Movimientos.route)
+            MenuPrincipalScreen(onNavigate = { ruta ->
+                navController.navigate(ruta) {
+                    popUpTo(Screen.Menu.route) { inclusive = false }
                 }
-            )
+            })
         }
 
         // Pantalla principal de productos
@@ -75,12 +81,12 @@ fun AppNavigation(navController: NavHostController) {
             arguments = listOf(
                 navArgument("productoId") { type = NavType.IntType }
             )
-        ) { backStackEntry ->
-            val productoId = backStackEntry.arguments?.getInt("productoId") ?: 0
+        ) { _ ->
             // TODO: Implementar DetalleProductoScreen
-            // Por ahora, volvemos atrás
             navController.popBackStack()
         }
+
+
         // ==================== PANTALLAS DE MOVIMIENTOS ====================
 
         // Pantalla principal de movimientos (historial)
@@ -125,11 +131,20 @@ fun AppNavigation(navController: NavHostController) {
             arguments = listOf(
                 navArgument("movimientoId") { type = NavType.IntType }
             )
-        ) { backStackEntry ->
-            val movimientoId = backStackEntry.arguments?.getInt("movimientoId") ?: 0
+        ) { _ ->
             // TODO: Implementar DetalleMovimientoScreen
-            // Por ahora, volvemos atrás
             navController.popBackStack()
+        }
+
+        // Reporte
+        composable(Screen.Reportes.route) {
+            val context = LocalContext.current
+            val movimientoDao = remember { AppDatabase.getDatabase(context).movimientoDao() }
+            // Inyectamos el DAO globalmente al repositorio de reportes
+            ReportRepository.setDao(movimientoDao)
+            val reportRepository = remember { ReportRepository() }
+            val viewModel = remember { ReportViewModel(reportRepository) }
+            ReportListScreen(viewModel, onNavigateBack = { navController.popBackStack() })
         }
     }
 }

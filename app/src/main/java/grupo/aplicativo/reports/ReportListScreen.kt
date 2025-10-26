@@ -1,115 +1,249 @@
 package grupo.aplicativo.reports
 
-import android.util.Log
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Surface
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.SideEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.collectAsState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.DeleteSweep
+import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import grupo.aplicativo.data.local.entity.Movimiento
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ReportListScreen(viewModel: ReportViewModel) {
+fun ReportListScreen(viewModel: ReportViewModel, onNavigateBack: () -> Unit) {
     val movements by viewModel.movements.collectAsState()
     val loading by viewModel.loading.collectAsState()
     val error by viewModel.error.collectAsState()
+    val message by viewModel.message.collectAsState()
     val coroutine = rememberCoroutineScope()
 
-    val showCsv = remember { mutableStateOf<String?>(null) }
+    var search by remember { mutableStateOf("") }
+    var showCsv by remember { mutableStateOf<String?>(null) }
+    var showConfirmDelete by remember { mutableStateOf(false) }
 
-    LaunchedEffect(Unit) {
-        viewModel.loadMovements()
+    LaunchedEffect(Unit) { viewModel.loadMovements() }
+
+    val filteredMovements = movements.filter {
+        it.productoNombre.contains(search, ignoreCase = true) ||
+                it.motivo.contains(search, ignoreCase = true)
     }
 
-    SideEffect {
-        Log.d("ReportListScreen", "Composición mostrada: ${movements.size} movimientos")
-    }
-
-    Surface(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            // Encabezado visible para identificar la pantalla en el dispositivo
-            Text(text = "REPORTES", style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(bottom = 8.dp))
-
-            Row(modifier = Modifier.fillMaxWidth()) {
-                Button(onClick = { viewModel.loadMovements() }) {
-                    Text("Refrescar")
-                }
-                androidx.compose.foundation.layout.Spacer(modifier = Modifier.weight(1f))
-                Button(onClick = {
-                    coroutine.launch {
-                        val csv = viewModel.generateCsvContent()
-                        showCsv.value = csv
+    Scaffold(
+        topBar = {
+            Column {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(
+                            Brush.horizontalGradient(
+                                listOf(
+                                    MaterialTheme.colorScheme.primary,
+                                    MaterialTheme.colorScheme.primaryContainer
+                                )
+                            )
+                        )
+                        .padding(vertical = 16.dp, horizontal = 8.dp)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        IconButton(onClick = onNavigateBack) {
+                            Icon(
+                                Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Volver",
+                                tint = MaterialTheme.colorScheme.onPrimary
+                            )
+                        }
+                        Text(
+                            "Historial de Reportes",
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 20.sp
+                        )
+                        Spacer(modifier = Modifier.weight(1f))
+                        IconButton(onClick = { showConfirmDelete = true }) {
+                            Icon(
+                                Icons.Filled.DeleteSweep,
+                                contentDescription = "Eliminar todo",
+                                tint = MaterialTheme.colorScheme.onPrimary
+                            )
+                        }
                     }
-                }) {
-                    Text("Exportar CSV")
                 }
-            }
 
-            if (loading) {
-                CircularProgressIndicator(modifier = Modifier.padding(8.dp))
-            }
-
-            if (error != null) {
-                Text(text = "Error: $error", color = MaterialTheme.colorScheme.error)
-            }
-
-            LazyColumn(modifier = Modifier.padding(top = 12.dp)) {
-                items(movements) { m ->
-                    ReportRow(m) {
-                        // Para el ejemplo no navegamos; se podría abrir detalle
-                    }
-                }
-            }
-
-            if (showCsv.value != null) {
-                AlertDialog(
-                    onDismissRequest = { showCsv.value = null },
-                    confirmButton = {
-                        Button(onClick = { showCsv.value = null }) { Text("Cerrar") }
-                    },
-                    text = { Text(showCsv.value ?: "") },
+                // Campo de búsqueda
+                OutlinedTextField(
+                    value = search,
+                    onValueChange = { search = it },
+                    label = { Text("Buscar producto o motivo...") },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp),
+                    singleLine = true
                 )
             }
+        },
+        floatingActionButton = {
+            Column(horizontalAlignment = Alignment.End) {
+                FloatingActionButton(
+                    onClick = { viewModel.loadMovements() },
+                    containerColor = MaterialTheme.colorScheme.primary
+                ) {
+                    Icon(Icons.Filled.Refresh, contentDescription = "Refrescar")
+                }
+                Spacer(modifier = Modifier.height(12.dp))
+                FloatingActionButton(
+                    onClick = {
+                        coroutine.launch {
+                            val csv = viewModel.generateCsvContent()
+                            showCsv = csv
+                        }
+                    },
+                    containerColor = MaterialTheme.colorScheme.tertiary
+                ) {
+                    Icon(Icons.Filled.Download, contentDescription = "Exportar CSV")
+                }
+            }
         }
+    ) { padding ->
+        Surface(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+        ) {
+            Column(modifier = Modifier.padding(12.dp)) {
+
+                if (loading) {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator()
+                    }
+                }
+
+                error?.let {
+                    Text(
+                        text = "⚠️ Error: $it",
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.padding(8.dp)
+                    )
+                }
+
+                AnimatedVisibility(visible = filteredMovements.isEmpty() && !loading) {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text("No hay movimientos registrados.", color = MaterialTheme.colorScheme.outline)
+                    }
+                }
+
+                LazyColumn {
+                    items(filteredMovements) { m ->
+                        AnimatedVisibility(visible = true, enter = fadeIn(), exit = fadeOut()) {
+                            ReportRow(m)
+                        }
+                    }
+                }
+
+                message?.let { msg ->
+                    AlertDialog(
+                        onDismissRequest = { viewModel.consumeMessage() },
+                        confirmButton = {
+                            Button(onClick = { viewModel.consumeMessage() }) {
+                                Text("Ok")
+                            }
+                        },
+                        text = { Text(msg) }
+                    )
+                }
+
+                if (showCsv != null) {
+                    AlertDialog(
+                        onDismissRequest = { showCsv = null },
+                        confirmButton = { Button(onClick = { showCsv = null }) { Text("Cerrar") } },
+                        text = {
+                            // Mostrar CSV en lista para evitar dependencias de scroll que no estén disponibles
+                            Box(modifier = Modifier.height(300.dp)) {
+                                val lines = showCsv!!.lines()
+                                LazyColumn(modifier = Modifier.fillMaxSize()) {
+                                    items(lines) { line ->
+                                        Text(line, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(4.dp))
+                                    }
+                                }
+                            }
+                        }
+                    )
+                }
+            }
+        }
+    }
+
+    if (showConfirmDelete) {
+        AlertDialog(
+            onDismissRequest = { showConfirmDelete = false },
+            title = { Text("Eliminar todos los reportes") },
+            text = { Text("¿Seguro que deseas eliminar todo el historial de movimientos?") },
+            confirmButton = {
+                Button(onClick = {
+                    showConfirmDelete = false
+                    viewModel.clearAllReports()
+                }) { Text("Sí, eliminar") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showConfirmDelete = false }) { Text("Cancelar") }
+            }
+        )
     }
 }
 
 @Composable
-fun ReportRow(m: Movement, onClick: () -> Unit) {
-    androidx.compose.material3.Card(
+fun ReportRow(m: Movimiento) {
+    val colorChip = if (m.esEntrada()) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
+    val chipText = if (m.esEntrada()) "ENTRADA" else "SALIDA"
+
+    Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 6.dp)
-            .clickable { onClick() }
+            .shadow(2.dp, RoundedCornerShape(16.dp)),
+        shape = RoundedCornerShape(16.dp)
     ) {
-        Column(modifier = Modifier.padding(12.dp)) {
-            Row(modifier = Modifier.fillMaxWidth()) {
-                Text(text = m.productName, style = MaterialTheme.typography.titleMedium)
-                androidx.compose.foundation.layout.Spacer(modifier = Modifier.weight(1f))
-                Text(text = m.type)
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = m.productoNombre,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Spacer(modifier = Modifier.weight(1f))
+                AssistChip(
+                    onClick = {},
+                    label = { Text(chipText) },
+                    colors = AssistChipDefaults.assistChipColors(
+                        containerColor = colorChip.copy(alpha = 0.15f),
+                        labelColor = colorChip
+                    )
+                )
             }
-            Text(text = "Cantidad: ${m.quantity} ${m.unit}")
-            Text(text = "Fecha: ${m.dateIso}")
+            Spacer(Modifier.height(4.dp))
+            Text("Cantidad: ${m.cantidad}", style = MaterialTheme.typography.bodyMedium)
+            Text("Fecha: ${m.obtenerFechaFormateada()}", style = MaterialTheme.typography.bodySmall)
+            if (m.motivo.isNotBlank()) Text("Motivo: ${m.motivo}", style = MaterialTheme.typography.bodySmall)
+            if (m.observaciones.isNotBlank()) Text("Obs.: ${m.observaciones}", style = MaterialTheme.typography.bodySmall)
         }
     }
 }

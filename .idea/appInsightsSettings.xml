@@ -8,10 +8,10 @@
             <InsightsFilterSettings>
               <option name="connection">
                 <ConnectionSetting>
-                  <option name="appId" value="PLACEHOLDER" />
-                  <option name="mobileSdkAppId" value="" />
-                  <option name="projectId" value="" />
-                  <option name="projectNumber" value="" />
+                  <option name="appId" value="com.grupo.aplicativo" />
+                  <option name="mobileSdkAppId" value="1:649037825893:android:e979f83e397212db12c38c" />
+                  <option name="projectId" value="bdnipponauto" />
+                  <option name="projectNumber" value="649037825893" />
                 </ConnectionSetting>
               </option>
               <option name="signal" value="SIGNAL_UNSPECIFIED" />
